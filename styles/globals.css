@@ -10,10 +10,20 @@
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
       Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    background: #eee;
+    scroll-behavior: smooth;
   }
   
   * {
     box-sizing: border-box;
+    
+  }
+  main {
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+  .card:nth-child(even){
+    background: #CCECFF;
   }
 }
 

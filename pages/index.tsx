@@ -2,10 +2,17 @@ import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import dayjs from 'dayjs'
-import timezone from 'dayjs/plugin/timezone' 
+import { useRecoilState } from 'recoil'
+import timezone from 'dayjs/plugin/timezone'
+import Skeleton from 'react-loading-skeleton'; 
+
+import Card from '@/components/Card'
 
 import { getPosts } from '@/services/posts'
 import { getAuthors } from '@/services/authors'
+import {loading} from '@/store/loading'
+
+import 'react-loading-skeleton/dist/skeleton.css'
 
 dayjs.extend(timezone)
 
@@ -32,36 +39,43 @@ const Home: NextPage = () => {
 
   const [posts, setPosts] = useState([])
 
+  const [isLoading, setIsLoading] = useRecoilState(loading);
+
 
   useEffect(() => {
    (async()=>{
+    let timer: any;
+    setIsLoading(true);
      try {
-      const res= await getAuthors()
-      if(res.status === 200&& res.statusText === 'OK') {
-        try {
-          const response= await getPosts()
-          if(response.status === 200 && response.statusText === 'OK'){
-            const newPosts = response.data.map((i:Posts) => {
-              // console.log('i',i)
-              const author = res.data.find((item:Authors) => item.id === i.author_id)
-              // console.log('author',author)
-              return {...i, name:author.name, avatar_url:author.avatar_url }
-            })
-            console.log(newPosts)
-            setPosts(newPosts)
+        const res= await getAuthors()
+        if(res.status === 200&& res.statusText === 'OK') {
+          try {
+            const response= await getPosts()
+            if(response.status === 200 && response.statusText === 'OK'){
+              const newPosts = response.data.map((i:Posts) => {
+                const author = res.data.find((item:Authors) => item.id === i.author_id)
+                return {...i, name:author.name, avatar_url:author.avatar_url }
+              })
+              setPosts(newPosts)
+              timer = setTimeout(() => {
+                setIsLoading(false);
+              }, 2000);
 
+            }
+          } catch (error) {
+            timer = setTimeout(() => {
+              setIsLoading(false);
+            }, 2000);
           }
-        } catch (error) {
-          
         }
-      
-      }
      } catch (error) {
-       
+      timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
      }
-     
-    //  const {data} = await getPosts()
-    //  console.log('res',data)
+      return () => {
+        clearTimeout(timer);
+      };
    })()
 }, []);
 
@@ -77,23 +91,34 @@ const Home: NextPage = () => {
         <h1 className='text-3xl font-bold'>MAQE FORUM</h1>
         <p className='text-gray-800 mb-5 mt-10'>Your current timezone is: {dayjs.tz.guess()}</p>
         <div className='grid grid-cols-1 gap-5'>
-
-        {posts.map((item:any) => (
-          <div key={item.id} className='card bg-white shadow-sm'>
-            <div className='flex border-b border-gray-300 py-2 px-2'>
-              <img  alt='avatar' src={item.avatar_url} className='w-5 h-5 rounded-full'/>
-              <span className='text-sm mx-2 text-orange-500 font-semibold'>{item.name}</span>
-              <span className='text-sm text-gray-500'>{`posted on ${dayjs(item.created_at).format('dddd, MMM D, YYYY, HH:ss')}`}</span>
-            </div>
-            <div className='flex p-5'>
-              <img alt='image' src={item.image_url} className='w-60 h-52'/>
-              <div className='flex flex-col ml-5'>
-                  <h2 className='font-bold text-xl'>{item.title}</h2>
-                  <p className='text-gray-700'>{item.body}</p>
+          {isLoading ? (
+            <>
+              <div  className='p-5 bg-white h-72 flex'>
+                <div>
+                  <Skeleton height={208} width={240} />
+                </div>
+                <div className='w-2/3 ml-5'>
+                  <Skeleton  height={30} />
+                  <Skeleton count={3} height={18} />
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+              <div  className='p-5 bg-white h-72 flex'>
+                <div>
+                  <Skeleton height={208} width={240} />
+                </div>
+                <div className='w-2/3 ml-5'>
+                  <Skeleton  height={30} />
+                  <Skeleton count={3} height={18} />
+                </div>
+              </div>
+            </>
+          ): 
+          posts.map((item:any) => (
+            <Card key={item.id} item={item}/>
+          ))
+          }
+
+       
         </div>
       </main>
       
